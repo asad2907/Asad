@@ -24,7 +24,13 @@ body{background:var(--bg);color:var(--fg);font-family:'Inter',sans-serif;font-we
 nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:1.5rem 4rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid transparent;transition:all 0.4s}
 nav.scrolled{background:rgba(10,10,10,0.95);border-bottom-color:var(--border);backdrop-filter:blur(12px)}
 .nav-logo{font-family:'Playfair Display',serif;font-size:1.1rem;letter-spacing:0.05em;color:var(--fg)}
-.nav-links{display:flex;gap:2.5rem}
+.nav-links{display:flex;gap:2.5rem;position:relative}
+.nav-links a{font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--fg2);text-decoration:none;transition:color 0.3s;padding:0.4em 0.9em;display:inline-block;position:relative;z-index:3}
+.nav-links a:hover{color:var(--fg2)}
+.nav-links a.goo-active{color:#0a0a0a}
+.goo-pill{position:absolute;top:0;left:0;height:100%;background:var(--accent);border-radius:100vw;z-index:1;pointer-events:none;transition:left 0.45s cubic-bezier(0.23,1,0.32,1),width 0.45s cubic-bezier(0.23,1,0.32,1)}
+.particle-wrap{position:absolute;top:0;left:0;width:0;height:0;pointer-events:none;z-index:2}
+.goo-particle{display:block;position:absolute;width:16px;height:16px;border-radius:50%;background:var(--accent);opacity:0;pointer-events:none}
 .nav-links a{font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--fg2);text-decoration:none;transition:color 0.3s}
 .nav-links a:hover{color:var(--accent)}
 
@@ -307,6 +313,68 @@ section{padding:5rem 1.5rem}
 </footer>
 
 <script>
+// GOOEY NAV
+(function(){
+  const navLinks=document.querySelector('.nav-links');
+  if(!navLinks)return;
+  const links=navLinks.querySelectorAll('a');
+
+  const pill=document.createElement('span');
+  pill.className='goo-pill';
+  navLinks.appendChild(pill);
+
+  const particleWrap=document.createElement('span');
+  particleWrap.className='particle-wrap';
+  navLinks.appendChild(particleWrap);
+
+  function movePill(el){
+    const navRect=navLinks.getBoundingClientRect();
+    const elRect=el.getBoundingClientRect();
+    pill.style.left=(elRect.left-navRect.left)+'px';
+    pill.style.width=elRect.width+'px';
+    pill.style.top=(elRect.top-navRect.top)+'px';
+    pill.style.height=elRect.height+'px';
+    particleWrap.style.left=(elRect.left-navRect.left+elRect.width/2)+'px';
+    particleWrap.style.top=(elRect.top-navRect.top+elRect.height/2)+'px';
+  }
+
+  function spawnParticles(){
+    for(let i=0;i<12;i++){
+      const p=document.createElement('span');
+      p.className='goo-particle';
+      const angle=Math.random()*360;
+      const dist=40+Math.random()*50;
+      const tx=Math.cos(angle*Math.PI/180)*dist;
+      const ty=Math.sin(angle*Math.PI/180)*dist;
+      const dur=400+Math.random()*300;
+      p.style.cssText=`left:-8px;top:-8px;transform:translate(0,0) scale(0.2);opacity:1;transition:transform ${dur}ms ease,opacity ${dur}ms ease`;
+      particleWrap.appendChild(p);
+      requestAnimationFrame(()=>{
+        requestAnimationFrame(()=>{
+          p.style.transform=`translate(${tx}px,${ty}px) scale(${0.3+Math.random()*0.4})`;
+          p.style.opacity='0';
+        });
+      });
+      setTimeout(()=>{try{particleWrap.removeChild(p)}catch(e){}},dur+50);
+    }
+  }
+
+  let active=links[0];
+  movePill(active);
+  active.classList.add('goo-active');
+
+  links.forEach(a=>{
+    a.addEventListener('click',function(e){
+      links.forEach(l=>l.classList.remove('goo-active'));
+      this.classList.add('goo-active');
+      movePill(this);
+      spawnParticles();
+      active=this;
+    });
+  });
+
+  window.addEventListener('resize',()=>{if(active)movePill(active)});
+})();
 const navbar = document.getElementById('navbar');
 window.addEventListener('scroll', () => {
   navbar.classList.toggle('scrolled', window.scrollY > 60);
