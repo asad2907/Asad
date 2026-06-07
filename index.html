@@ -112,7 +112,10 @@ footer p{font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.1em;
 
 .reveal{opacity:0;transform:translateY(30px);transition:opacity 0.8s,transform 0.8s}
 .reveal.visible{opacity:1;transform:translateY(0)}
-
+.gb-overlay{position:absolute;left:0;right:0;height:140px;pointer-events:none;z-index:10}
+.gb-overlay.bottom{bottom:0}
+.gb-overlay.top{top:0}
+.gb-layer{position:absolute;inset:0}
 @media(max-width:768px){
 nav{padding:1.2rem 1.5rem}
 .nav-links{gap:1.5rem}
@@ -374,6 +377,50 @@ section{padding:5rem 1.5rem}
   });
 
   window.addEventListener('resize',()=>{if(active)movePill(active)});
+})();// GRADUAL BLUR
+(function(){
+  function getBgColor(el){
+    let e=el;
+    while(e&&e!==document.body){
+      const bg=getComputedStyle(e).backgroundColor;
+      if(bg&&bg!=='rgba(0, 0, 0, 0)'&&bg!=='transparent')return bg;
+      e=e.parentElement;
+    }
+    return '#0a0a0a';
+  }
+
+  function makeBlur(section,position){
+    const wrap=document.createElement('div');
+    wrap.className='gb-overlay '+(position||'bottom');
+    const bg=getBgColor(section);
+    const count=7;
+    for(let i=1;i<=count;i++){
+      const progress=i/count;
+      const bezier=progress*progress*(3-2*progress);
+      const blurVal=(bezier*bezier*8).toFixed(2);
+      const p1=Math.round(((i-1)/count)*100);
+      const p2=Math.round((i/count)*100);
+      const dir=position==='top'?'to top':'to bottom';
+      const layer=document.createElement('div');
+      layer.className='gb-layer';
+      layer.style.cssText=`
+        mask-image:linear-gradient(${dir}, transparent ${p1}%, black ${p2}%);
+        -webkit-mask-image:linear-gradient(${dir}, transparent ${p1}%, black ${p2}%);
+        backdrop-filter:blur(${blurVal}px);
+        -webkit-backdrop-filter:blur(${blurVal}px);
+        background:${bg};
+        opacity:0.18;
+      `;
+      wrap.appendChild(layer);
+    }
+    section.style.position='relative';
+    section.style.overflow='hidden';
+    section.appendChild(wrap);
+  }
+
+  document.querySelectorAll('section').forEach(s=>{
+    makeBlur(s,'bottom');
+  });
 })();
 const navbar = document.getElementById('navbar');
 window.addEventListener('scroll', () => {
